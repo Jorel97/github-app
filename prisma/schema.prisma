@@ -58,6 +58,12 @@ model Bounty {
   repositoryId String
   issueNumber  Int
   issueNodeId  String?
+  issueTitle   String?
+  issueUrl     String?
+  issueState   String?
+  issueExcerpt String?      @db.Text
+  issueCreatedAt DateTime?
+  issueUpdatedAt DateTime?
   labelName    String
   amount       Decimal      @db.Decimal(18, 6)
   currency     String

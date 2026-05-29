@@ -3,6 +3,7 @@ import { getEnv } from "@/lib/config/env";
 import { serializeError } from "@/lib/errors";
 import { parseBountyLabel } from "@/lib/github/bounty-label";
 import { createIssueComment } from "@/lib/github/client";
+import { makeIssueExcerpt } from "@/lib/issues/discovery";
 import {
   bountyRegisteredMessage,
   inviteRequiredMessage,
@@ -110,6 +111,15 @@ async function handleIssueLabeled(payload: GithubWebhookPayload) {
   }
 
   const repository = await upsertRepository(payload);
+  const issue = payload.issue;
+  const issueMetadata = {
+    issueTitle: issue?.title ?? null,
+    issueUrl: issue?.html_url ?? null,
+    issueState: issue?.state ?? null,
+    issueExcerpt: makeIssueExcerpt(issue?.body),
+    issueCreatedAt: issue?.created_at ? new Date(issue.created_at) : null,
+    issueUpdatedAt: issue?.updated_at ? new Date(issue.updated_at) : null,
+  };
   const bounty = await prisma.bounty.upsert({
     where: {
       repositoryId_issueNumber_labelName: {
@@ -122,6 +132,7 @@ async function handleIssueLabeled(payload: GithubWebhookPayload) {
       amount: parsed.amount,
       currency: parsed.currency,
       status: "OPEN",
+      ...issueMetadata,
     },
     create: {
       repositoryId: repository.id,
@@ -130,6 +141,7 @@ async function handleIssueLabeled(payload: GithubWebhookPayload) {
       labelName: parsed.raw,
       amount: parsed.amount,
       currency: parsed.currency,
+      ...issueMetadata,
     },
   });
 
